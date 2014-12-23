@@ -1,0 +1,54 @@
+#include "iobuf.h"
+#include "textint.h"
+#include "http.h"
+#include "http-headers.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <assert.h>
+
+#define BIT(x) (1ul<<(x))
+
+int
+main (void)
+{
+  char message[] =
+    "GET /test/uri?with&query-string HTTP/1.1\r\n"
+    "Host: minute.example.org\r\n"
+    "Connection: close\r\n"
+    "\r\n"
+    "This data shouldn't be read\r\n";
+  unsigned payloadOffset = strstr(message,"\r\n\r\n")-message+4;
+  char textbuf[0x40];
+
+  iobuf   input = {0, sizeof(message)-1, 0xff, IOBUF_EOF, message};
+  textint text = {0, 0x40, 0x40, textbuf};
+
+  minute_http_rqs rqs;
+  minute_http_rq  request = {};
+
+  int             result;
+
+  minute_http_init(MINUTE_ALL_HEADERS, &input, &text, &rqs);
+
+  result = minute_http_read (&request, &rqs);
+  if (result) {
+    fprintf (stderr, "minute_http_read: %d\n", result);
+    exit (1);
+  }
+
+  assert(0 == strcmp(&textbuf[request.path], "/test/uri"));
+  assert(0 == strcmp(&textbuf[request.query], "with&query-string"));
+  assert(request.request_method == http_get);
+  assert(request.server_protocol == http_1_1);
+  assert(input.read == payloadOffset);
+  assert(request.flags & http_connection_close);
+  assert(minute_textint_intsize(&text) == 2);
+  assert(minute_textint_geti(0, &text) == http_rq_host);
+  int hosti = minute_textint_geti(1, &text);
+  assert(0 == strcmp(&textbuf[hosti], "minute.example.org"));
+  return 0;
+}

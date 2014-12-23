@@ -1,0 +1,61 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2014 Fredrik Alstromer <falstro@excu.se>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH MINUTED 1 "December 14, 2014"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+minuted \- minute http server
+.SH SYNOPSIS
+.B minuted
+.RI [ options ]
+.SH DESCRIPTION
+This manual page provides a short summary of how to launch the
+.B minuted
+server.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invode bold face and italics,
+.\" respectively.
+.B minuted
+is an HTTP server based on the libminute http libraries and TCL.
+.SH OPTIONS
+A summary of options is included below.
+For a more thorough description read the README.
+.TP
+.B \-f <file>
+Use configuration file instead of /etc/minuted.conf
+.TP
+.B \-d <pid-file>
+Daemonize process and write the pid to the pid-file.
+.TP
+.B \-v
+Show the version.
+.TP
+.B \-h
+Show a summary of options.
+.TP
+.B \-D
+Enable debug logging.
+
+.SH FILES
+.TP
+.B /etc/minuted.conf
+The default configuration location.
+
+.SH NOTES
+This man page has still a long way to go. So does the project as a whole.
+.\" .SH SEE ALSO

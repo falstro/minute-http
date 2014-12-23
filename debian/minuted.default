@@ -1,0 +1,10 @@
+# Defaults for minuted initscript
+# sourced by /etc/init.d/minuted
+# installed at /etc/default/minuted by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

@@ -1,0 +1,46 @@
+.PHONY: clean
+
+CC=gcc
+
+DEBCFLAGS=-O2 -fstack-protector-strong -Wformat -Werror=format-security
+DEBLDFLAGS=-Wl,-z,relro
+
+CFLAGS=-I$(ROOT) -MMD -Wall -g $(DEBCFLAGS) -std=c99
+LDFLAGS=-Wall $(DEBLDFLAGS) $(LIBS)
+INSTALL_PROGRAM=install -DT -m0755
+INSTALL_LIBRARY=install -DT -m0644
+
+clean:
+	rm -f $(targets) $(tests) *.d *.o
+
+install: install-recursive install-program install-library
+
+install-program: $(notdir $(install_program))
+	@for f in $(install_program); do \
+	  echo Installing $(DESTDIR)$$f ...; \
+	  $(INSTALL_PROGRAM) `basename $$f` $(DESTDIR)$$f; \
+	done
+
+install-library: $(notdir $(install_library))
+	@for f in $(install_library); do \
+	  echo Installing $(DESTDIR)$$f ...; \
+	  $(INSTALL_LIBRARY) `basename $$f` $(DESTDIR)$$f; \
+	done
+
+check: $(tests)
+	@f=0; [ -n "$(tests)" ] && for t in $(tests); do \
+		printf "%-20s" $$t:; \
+		msg=`./$$t 2>&1`; \
+		if [ $$? -eq 0 ]; then echo "OK"; else echo "Failed"; f=$$((f+1)); fi; \
+		[ -n "$$msg" ] && echo "$$msg" | sed -e 's/^/    /' || true; \
+	done; [ $$f -eq 0 ]
+
+%.a:
+	ar r $@ $+
+
+onfail := $(if $(findstring k,$(MAKEFLAGS)),fail=true,exit 1)
+%-recursive:
+	@t="$@"; for d in $(SUBS); do $(MAKE) -C $$d $${t%%-*} || $(onfail); done;\
+	test -z "$$fail"
+
+include $(wildcard *.d)

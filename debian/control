@@ -1,0 +1,15 @@
+Source: minuted
+Section: httpd
+Priority: optional
+Maintainer: Fredrik Alstromer <falstro@excu.se>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: http://excu.se
+#Vcs-Git: git://anonscm.debian.org/collab-maint/minuted.git
+#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/minuted.git;a=summary
+
+Package: minuted
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: http server based on libminute- minimal resource libraries.
+ minuted standalone http server, based on libminute-http and libminute-httpd.

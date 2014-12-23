@@ -1,0 +1,5 @@
+# Automatically added by dh_installinit
+if [ -x "/etc/init.d/minuted" ]; then
+	invoke-rc.d minuted stop || exit $?
+fi
+# End automatically added section

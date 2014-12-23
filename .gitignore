@@ -1,0 +1,6 @@
+*.o
+*.d
+*.a
+*.log
+/debian/minuted
+/minuted/minuted
