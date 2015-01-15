@@ -401,21 +401,28 @@ minute_httpd_handle  (int   readfd,
           &resp.head.base);
 
       minute_httpd_chunk (NL, 2, 0, &resp);
-      // do not call payload on HEAD request, or if we return a 204 No content.
-      if (rq.request_method != http_head && status != 204) {
-        headermark = resp.out.io.write; // end of the headers.
-        if (app->payload (&rq, &resp.out.base, &text, status, user)
-            && resp.out.io.write == headermark)
-        {
-          // only send if the app payload returned non-zero, and it hasn't
-          // written anything beyond the headers.
-          minute_httpd_standard_body(status, &resp);
-        }
+      // do not call payload on HEAD request, or if we return a code implying
+      // that there is nothing to be sent (e.g. no content or not modified)
+      if (rq.request_method != http_head) switch(status) {
+        case http_no_content:
+        case http_reset_content:
+        case http_not_modified:
+          break;
+        default:
+          headermark = resp.out.io.write; // end of the headers.
+          if (app->payload (&rq, &resp.out.base, &text, status, user)
+              && resp.out.io.write == headermark)
+          {
+            // only send if the app payload returned non-zero, and it hasn't
+            // written anything beyond the headers.
+            minute_httpd_standard_body(status, &resp);
+          }
       }
     }
 
     minute_httpd_flush (&resp.out.base);
     minute_httpd_chunk_end (&resp);
+    //TODO discard rest of request payload, if any.
     rqcount ++;
   } while ((resp.head.flags & httpd_connection_keep) == httpd_connection_keep);
 

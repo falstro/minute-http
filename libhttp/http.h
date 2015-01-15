@@ -26,6 +26,59 @@ http_method
   http_trace,
   http_connect
 };
+
+enum
+http_status_code
+{
+    http_continue = 100,
+    http_switching_protocols = 101,
+
+    http_ok = 200,
+    http_created = 201,
+    http_accepted = 202,
+    http_non_authoritative_information = 203,
+    http_no_content = 204,
+    http_reset_content = 205,
+    http_partial_content = 206,
+
+    http_multiple_choices = 300,
+    http_moved_permanently = 301,
+    http_found = 302,
+    http_see_other = 303,
+    http_not_modified = 304,
+    http_use_proxy = 305,
+    // reserved = 306,
+    http_temporary_redirect = 307,
+
+    http_bad_request = 400,
+    http_not_authorized = 401,
+    http_payment_required = 402,
+    http_forbidden = 403,
+    http_not_found = 404,
+    http_method_not_allowed = 405,
+    http_not_acceptable = 406,
+    http_proxy_authentication_required = 407,
+    http_request_timed_out = 408,
+    http_conflict = 409,
+    http_gone = 410,
+    http_length_required = 411,
+    http_precondition_failed = 412,
+    http_request_entity_too_large = 413,
+    http_request_uri_too_long = 414,
+    http_unsupported_media_type = 415,
+    http_requested_range_not_satisfiable = 416,
+    http_expectation_failed = 417,
+
+    http_im_a_teapot = 418,
+
+    http_internal_server_error = 500,
+    http_not_implemented = 501,
+    http_bad_gateway = 502,
+    http_service_unavailable = 503,
+    http_gateway_timeout = 504,
+    http_http_version_not_supported = 505
+};
+
 enum
 http_header_flags
 {
@@ -91,7 +144,7 @@ minute_http_rqs;
   \param  heads   Mask describing which headers to collect, zero to ignore all
                   headers, and all bits set to collect all headers. OR the
                   bits corresponding to the enum value of the
-                  http_reqest_header enum to have them collected,
+                  http_request_header enum to have them collected,
                   e.g.  1<<http_rq_host.
   \param  in      The IO buffer to read when parsing requests.
   \param  text    The text buffer to store path, query, header values, etc
