@@ -24,6 +24,8 @@ struct tap_runtime
   int                   nv;
 };
 
+Tcl_Interp* minuted_tap_create (Tcl_Interp *parent,
+                                Tcl_Obj    *name);
 
 unsigned  minuted_tap_handle (int                 sock,
                               int                 listenId,

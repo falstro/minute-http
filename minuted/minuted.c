@@ -173,8 +173,7 @@ minuted_serve_load (runstate *rs)
       res = -1;
       break;
     } else {
-      Tcl_Interp *s = Tcl_CreateSlave(tcl, Tcl_GetString(name), 0);
-      //TODO alias functions into slave interpreter, e.g. log
+      Tcl_Interp *s = minuted_tap_create(tcl, name);
       if(Tcl_EvalFile(s, Tcl_GetString(app))) {
         //TODO full stack trace? at least the file name?
         error(Tcl_GetStringResult(s));
