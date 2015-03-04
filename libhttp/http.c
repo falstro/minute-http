@@ -4,6 +4,7 @@
 #include "http-headers.h"
 
 #include <errno.h>
+#include <stddef.h>
 
 /* RFC: 2616 */
 
@@ -32,63 +33,73 @@ typedef struct triestate
   unsigned slot;  // current table slot
 }
 triestate;
-                     // Check
-static               //    Next
-patricia headers[] = //       Offset                     Offsets:  1         2
-{                    //          Terminal                0123456789012345678901
-  {"a",               0, 1, 4, 0},                    // a
-  {0,                 0, 0, 0, 0},                    // ba
-  {"c",               0, 4,13, 0},                    // cba
-  {"date",            0, 0, 0, http_rq_date},         // dcba
-  {"expect",          0,99, 0, http_rq_expect},       // edcba
-  {"from",            0, 0, 0, http_rq_from},         // fedcba
-  {"ccept",           1, 2, 9, http_rq_accept},       // gfedcba
-  {"host",            0,99, 0, http_rq_host},         // hgfedcba
-  {"if-",             0, 5,16, 0},                    // ihgfedcba
-  {"charset",         3,99, 0, http_rq_accept_charset},//jihgfedcba
-  {"ange",            7,99, 0, http_rq_range},        // kjihgfedcba
-  {"encoding",        3,99, 0, http_rq_accept_encoding},//kjihgfedcba
-  {"max-forwards",    0, 0, 0, http_rq_max_forwards}  ,//mlkjihgfedcba
-  {"ache-control",    4,99, 0, http_rq_cache_control},// nmlkjihgfedcba
-  {"eferer",          7,99, 0, http_rq_referer},      // onmlkjihgfedcba
-  {"pr",              0, 6,16, 0},                    // ponmlkjihgfedcba
-  {"agma",            6,99, 0, http_rq_pragma},       // qponmlkjihgfedcba
-  {"r",               0, 7,10, 0},                    // rqponmlkjihgfedcba
-  {"language",        3,99, 0, http_rq_accept_language},//rqponmlkjihgfedcba
-  {"t",               0, 8,21, 0},                    // tsrqponmlkjihgfedcba
-  {"u",               0,10,19, 0},                    // utsrqponmlkjihgfedcba
-  {"via",             0, 0, 0, http_rq_via},          // vutsrqponmlkjihgfedcba
-  {"warning",         0, 0, 0, http_rq_warning},      // wvutsrqponmlkjihgfedcb
-  {0,                 0, 0, 0, 0},                    // xwvutsrqponmlkjihgfedc
-  {"uthorization",    1,99, 0, http_rq_authorization},// yxwvutsrqponmlkjihgfed
-  {"e",               8,99, 0, http_rq_te},           // zyxwvutsrqponmlkjihgfe
-  {"iler",            9,99, 0, http_rq_trailer},      // -zyxwvutsrqponmlkjihgf
-  {"o",               4,11,19, 0},                    // ?-zyxwvutsrqponmlkjihg
-  {"modified-since",  5,99, 0, http_rq_if_modified_since},//zyxwvutsrqponmlkjih
-  {"none-match",      5,99, 0, http_rq_if_none_match},//   ?-zyxwvutsrqponmlkji
-  {"oxy-authorization",6,99,0, http_rq_proxy_authorization},//zyxwvutsrqponmlkj
-  {"nsfer-encoding",  9,99, 0, http_rq_transfer_encoding},// ?-zyxwvutsrqponmlk
-  {"nnection",       11,99, 0, http_rq_connection},   //      ?-zyxwvutsrqponml
-  {"okie",           11,99, 0, http_rq_cookie},       //       ?-zyxwvutsrqponm
-  {"pgrade",         10,99, 0, http_rq_upgrade},      //        ?-zyxwvutsrqpon
-  {"-",               2, 3, 7, 0},                    //         ?-zyxwvutsrqpo
-  {"unmodified-since",5,99, 0, http_rq_if_unmodified_since},//    ?-zyxwvutsrqp
-  {"ser-agent",      10,99, 0, http_rq_user_agent},   //           ?-zyxwvutsrq
-  {"ra",              8, 9,18, 0},                    //            ?-zyxwvutsr
-  {0,                 0, 0, 0, 0},                    //             ?-zyxwvuts
-  {0,                 0, 0, 0, 0},                    //              ?-zyxwvut
-  {0,                 0, 0, 0, 0},                    //               ?-zyxwvu
-  {0,                 0, 0, 0, 0},                    //                ?-zyxwv
-  {0,                 0, 0, 0, 0},                    //                 ?-zyxw
-  {0,                 0, 0, 0, 0},                    //                  ?-zyx
-  {0,                 0, 0, 0, 0},                    //                   ?-zy
-  {0,                 0, 0, 0, 0},                    //                    ?-z
-  {0,                 0, 0, 0, 0},                    //                     ?-
-  {0,                 0, 0, 0, 0}                     //                      ?
+                      // Check
+static                //    Next
+patricia headers[] =  //       Offset
+{                     //          Terminal
+  {"a",                  0, 1, 4, 0},
+  {NULL,                 0, 0, 0, 0},
+  {"c",                  0, 8,13, 0},
+  {"date",               0,99, 0, http_rq_date},
+  {"expect",             0,99, 0, http_rq_expect},
+  {"from",               0,99, 0, http_rq_from},
+  {"ccept",              1, 2, 0, http_rq_accept},
+  {"host",               0,99, 0, http_rq_host},
+  {"if-",                0,26,30, 0},
+  {"charset",            3,99, 0, http_rq_accept_charset},
+  {"e",                 41,99, 0, http_rq_te},
+  {"encoding",           3,99, 0, http_rq_accept_encoding},
+  {"max-forwards",       0,99, 0, http_rq_max_forwards},
+  {"ache-control",       8,99, 0, http_rq_cache_control},
+  {"origin",             0,99, 0, http_rq_origin},
+  {"pr",                 0,35,25, 0},
+  {"atch",              27,99, 0, http_rq_if_match},
+  {"r",                  0,38,28, 0},
+  {"language",           3,99, 0, http_rq_accept_language},
+  {"t",                  0,41, 6, 0},
+  {"u",                  0,46,31, 0},
+  {"via",                0,99, 0, http_rq_via},
+  {"warning",            0,99, 0, http_rq_warning},
+  {"ra",                41,43,21, 0},
+  {"uthorization",       1,99, 0, http_rq_authorization},
+  {"agma",              35,99, 0, http_rq_pragma},
+  {"-",                  2, 3, 7, 0},
+  {"o",                  8,10,23, 0},
+  {"ange",              38,99, 0, http_rq_range},
+  {"iler",              43,99, 0, http_rq_trailer},
+  {"odified-since",     27,99, 0, http_rq_if_modified_since},
+  {"anguage",           15,99, 0, http_rq_content_language},
+  {"eferer",            38,99, 0, http_rq_referer},
+  {"encoding",          13,99, 0, http_rq_content_encoding},
+  {"nsfer-encoding",    43,99, 0, http_rq_transfer_encoding},
+  {"ength",             15,99, 0, http_rq_content_length},
+  {"n",                 10,11,25, 0},
+  {"okie",              10,99, 0, http_rq_cookie},
+  {"nection",           11,99, 0, http_rq_connection},
+  {"oxy-authorization", 35,99, 0, http_rq_proxy_authorization},
+  {"l",                 13,15,31, 0},
+  {"md5",               13,99, 0, http_rq_content_md5},
+  {"m",                 26,27,16, 0},
+  {"none-match",        26,99, 0, http_rq_if_none_match},
+  {"tent-",             11,13,29, 0},
+  {"ocation",           15,99, 0, http_rq_content_location},
+  {"pgrade",            46,99, 0, http_rq_upgrade},
+  {"range",             26,99, 0, http_rq_if_range},
+  {"type",              13,99, 0, http_rq_content_type},
+  {"ser-agent",         46,99, 0, http_rq_user_agent},
+  {"unmodified-since",  26,99, 0, http_rq_if_unmodified_since},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0},
+  {NULL,                 0, 0, 0, 0}
 };
 
 // Methods: state 0, offset 0
-// Protocol: state 10, offset 1 
+// Protocol: state 10, offset 1
                      //Check
 static               //  Next
 patricia utility[] = //     Offset                     Offsets:

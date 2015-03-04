@@ -50,5 +50,6 @@ main (void)
   assert(minute_textint_geti(0, &text) == http_rq_host);
   int hosti = minute_textint_geti(1, &text);
   assert(0 == strcmp(&textbuf[hosti], "minute.example.org"));
+  assert(0 == strcmp("Warning",http_request_header_names[http_rq_warning]));
   return 0;
 }
