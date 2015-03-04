@@ -1,0 +1,12 @@
+CONNECT
+DELETE
+GET
+HEAD
+OPTIONS
+POST
+PUT
+TRACE
+?close
+?keep-alive
+??HTTP
+???

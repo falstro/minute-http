@@ -22,8 +22,8 @@ more will probably be added eventually), the `Connection` header is
 interpreted. Unrecognized headers are currently ignored.
 
 Parsing of the request is done using a hand written finite state machine, as
-well as hand written, compacted, radix tries stored in linear tables to keep
-the footprint to a minimum.
+well as compacted radix tries stored in linear tables to keep the footprint to
+a minimum.
 
 This library has no dependencies except a minimal set of the C standard
 library: `memcpy` and `strlen`.
@@ -34,8 +34,8 @@ libminute-httpd
 `libminute-httpd` provides a minimal HTTP service using `libminute-http`,
 with client provided callbacks to handle the actual requests. Requests are
 read from -- and responses are written to -- file descriptors using POSIX
-scatter/gather I/O (readv and writev) using client provided memory blocks as
-ring buffers.
+scatter/gather I/O (readv and writev) operating on client provided memory
+blocks as ring buffers.
 
 There's currently no actual networking set up or threading code in this
 library, which has to be provided by the surrounding application.
@@ -45,7 +45,7 @@ minuted
 
 `minuted` is a standalone HTTP server based on `libminute-httpd` and TCL. It
 is intended as a proof of concept implementation using the minute libraries,
-but might be useful for small setups. If nothing else it's got to have a
+but might be useful for small setups. If nothing else it's good to have a
 server that actually uses the libraries to see them in action and to get
 immediate feedback regarding potential shortcomings and pitfalls with the
 libraries.
@@ -86,7 +86,8 @@ There are three accepted comment styles in the minuted configuration
      a TCL command, thus it'll be single line unless you use braces. To make
      sure we don't accidentally close the comment early, it checks that the
      last argument is a '*/' token. Furthermore, since it's actually a command
-     and the braces need to be balanced, and thus these comments do nest.
+     the braces need to be balanced, and thus these comments do nest as
+     opposed to their C brethren.
 
 Virtual hosts
 -------------
