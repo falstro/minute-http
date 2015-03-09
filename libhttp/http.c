@@ -34,7 +34,7 @@ typedef struct triestate
 }
 triestate;
                       // Check
-static                //    Next
+static const          //    Next
 patricia headers[] =  //       Offset
 {                     //          Terminal
   {"a",                  0, 1, 4, 0},
@@ -97,43 +97,49 @@ patricia headers[] =  //       Offset
   {NULL,                 0, 0, 0, 0},
   {NULL,                 0, 0, 0, 0}
 };
+static const patricia patinitial_headers = { "", 0, 0, 0, 0 };
 
 // Methods: state 0, offset 0
 // Protocol: state 10, offset 1
+// Connection header values: state 20, offset 2
+// Expect header values: state 30, offset 0
                      //Check
-static               //  Next
+static const         //  Next
 patricia utility[] = //     Offset                     Offsets:
 {                    //        Terminal                012
   {0,                 0, 0, 0, 0},                  // a
   {0,                 0, 0, 0, 0},                  // ba
-  {"CONNECT",         0, 0, 0, http_connect},       // cba
-  {"DELETE",          0, 0, 0, http_delete},        // dcb
-  {"close",          20, 0, 0, http_connection_close},//dc
+  {"CONNECT",         0,99, 0, http_connect},       // cba
+  {"DELETE",          0,99, 0, http_delete},        // dcb
+  {"close",          20,99, 0, http_connection_close},//dc
   {0,                 0, 0, 0, 0},                  // fed
-  {"GET",             0, 0, 0, http_get},           // gfe
-  {"HEAD",            0, 0, 0, http_head},          // hgf
-  {"HTTP",           10, 0, 0, http_proto},         // ihg
+  {"GET",             0,99, 0, http_get},           // gfe
+  {"HEAD",            0,99, 0, http_head},          // hgf
+  {"HTTP",           10,99, 0, http_proto},         // ihg
   {0,                 0, 0, 0, 0},                  // jih
   {0,                 0, 0, 0, 0},                  // kji
   {0,                 0, 0, 0, 0},                  // lkj
-  {"keep-alive",     20, 0, 0, http_connection_keep},//mlk
+  {"keep-alive",     20,99, 0, http_connection_keep},//mlk
   {0,                 0, 0, 0, 0},                  // nml
-  {"OPTIONS",         0, 0, 0, http_options},       // onm
+  {"OPTIONS",         0,99, 0, http_options},       // onm
   {"P",               0, 1, 2, 0},                  // pon
-  {"OST",             1, 0, 0, http_post},          // qpo
+  {"OST",             1,99, 0, http_post},          // qpo
   {0,                 0, 0, 0, 0},                  // rqp
   {0,                 0, 0, 0, 0},                  // srq
-  {"TRACE",           0, 0, 0, http_trace},         // tsr
+  {"TRACE",           0,99, 0, http_trace},         // tsr
   {0,                 0, 0, 0, 0},                  // uts
   {0,                 0, 0, 0, 0},                  // vut
-  {"UT",              1, 0, 0, http_put},           // wvu
+  {"UT",              1,99, 0, http_put},           // wvu
   {0,                 0, 0, 0, 0},                  // xwv
   {0,                 0, 0, 0, 0},                  // yxw
   {0,                 0, 0, 0, 0},                  // zyx
-  {0,                 0, 0, 0, 0},                  // ?zy
+  {"100-continue",   30,99, 0, http_expect_continue},//?zy
   {0,                 0, 0, 0, 0},                  //  ?z
   {0,                 0, 0, 0, 0},                  //   ?
 };
+
+static const patricia patinitial_connection = { "", 0, 20, 2, 0 };
+static const patricia patinitial_expect = { "", 0, 30, 0, 0 };
 
 typedef enum
 {
@@ -148,6 +154,8 @@ typedef enum
   h_value_lead, h_cont,
   h_value,
   h_head_connection,
+  h_head_expect,
+  h_head_flag,
   h_error_not_implemented,
   h_error_bad_request,
   h_error_internal_server_error
@@ -193,10 +201,10 @@ header_trie_map (char c)
 
 static int
 walk_trie(int c, unsigned offset_c,
-          patricia *tree, patricia *initial,
+          const patricia *tree, const patricia *initial,
           triestate *tstate)
 {
-  patricia *p;
+  const patricia *p;
   int       pc;
 
   if (tstate->poff) {
@@ -334,6 +342,7 @@ minute_http_read (minute_http_rq   *rq,
   unsigned b = io->read;
   int c = 0;
 
+  const patricia *patinitial_flag = NULL;
   triestate tstate = {s.tries[0], s.tries[1]};
 
 # ifdef DEBUG_MINUTE_HTTP_READ
@@ -551,12 +560,11 @@ minute_http_read (minute_http_rq   *rq,
 
         break;
       case h_header: {
-        patricia initial = { "", 0, 0, 0, 0 };
         int r;
         if (c >= 'A' && c <= 'Z')
           c = c-'A'+'a'; // convert these to lower case
         r = walk_trie (c == ':' ? 0 : c, header_trie_map(c),
-                           headers, &initial, &tstate);
+                           headers, &patinitial_headers, &tstate);
         if (r < 0) {
           // TODO unknown header
           /*
@@ -572,6 +580,10 @@ minute_http_read (minute_http_rq   *rq,
           switch (r) {
             case http_rq_connection:
                 s.est = h_head_connection;
+                shift (h_value_lead);
+              break;
+            case http_rq_expect:
+                s.est = h_head_expect;
                 shift (h_value_lead);
               break;
             default: {
@@ -597,14 +609,20 @@ minute_http_read (minute_http_rq   *rq,
         if (!(s.hmask & 1))
           b = s.m;
       } break;
-      case h_head_connection: {
-        patricia initial = { "", 0, 20, 2, 0 };
+      case h_head_connection:
+        patinitial_flag = &patinitial_connection;
+        reset(h_head_flag);
+        break;
+      case h_head_expect:
+        patinitial_flag = &patinitial_expect;
+        reset(h_head_flag);
+        break;
+      case h_head_flag: {
         int r;
         if (c >= 'A' && c <= 'Z')
           c = c-'A'+'a';
-        r = walk_trie ((c == '\r' || c == '\n') ?
-                        0 : c, utility_trie_map(c),
-                        utility, &initial, &tstate);
+        r = walk_trie ((c == '\r' || c == '\n') ?  0 : c, utility_trie_map(c),
+                        utility, patinitial_flag, &tstate);
         if (r < 0) {
           // unknown value, skip it.
           reset (h_skipline);

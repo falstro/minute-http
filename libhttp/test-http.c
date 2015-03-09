@@ -19,6 +19,7 @@ main (void)
     "GET /test/uri?with&query-string HTTP/1.1\r\n"
     "Host: minute.example.org\r\n"
     "Connection: close\r\n"
+    "Expect: 100-continue\r\n"
     "\r\n"
     "This data shouldn't be read\r\n";
   unsigned payloadOffset = strstr(message,"\r\n\r\n")-message+4;
@@ -40,12 +41,13 @@ main (void)
     exit (1);
   }
 
-  assert(0 == strcmp(&textbuf[request.path], "/test/uri"));
-  assert(0 == strcmp(&textbuf[request.query], "with&query-string"));
   assert(request.request_method == http_get);
   assert(request.server_protocol == http_1_1);
-  assert(input.read == payloadOffset);
   assert(request.flags & http_connection_close);
+  assert(request.flags & http_expect_continue);
+  assert(0 == strcmp(&textbuf[request.path], "/test/uri"));
+  assert(0 == strcmp(&textbuf[request.query], "with&query-string"));
+  assert(input.read == payloadOffset);
   assert(minute_textint_intsize(&text) == 2);
   assert(minute_textint_geti(0, &text) == http_rq_host);
   int hosti = minute_textint_geti(1, &text);
