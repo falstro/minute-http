@@ -85,7 +85,8 @@ http_header_flags
   http_no_flags         = 0,
   http_connection_close = 0x01,
   http_connection_keep  = 0x02,
-  http_expect_continue  = 0x04
+  http_expect_continue  = 0x04,
+  http_transfer_chunked = 0x08
 };
 
 /** \brief Structure for the parsed request.

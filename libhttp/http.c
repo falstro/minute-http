@@ -102,17 +102,18 @@ static const patricia patinitial_headers = { "", 0, 0, 0, 0 };
 // Methods: state 0, offset 0
 // Protocol: state 10, offset 1
 // Connection header values: state 20, offset 2
+// Transfer-Encoding values: state 25, offset 3
 // Expect header values: state 30, offset 0
                      //Check
 static const         //  Next
 patricia utility[] = //     Offset                     Offsets:
-{                    //        Terminal                012
+{                    //        Terminal                0123
   {0,                 0, 0, 0, 0},                  // a
   {0,                 0, 0, 0, 0},                  // ba
   {"CONNECT",         0,99, 0, http_connect},       // cba
-  {"DELETE",          0,99, 0, http_delete},        // dcb
-  {"close",          20,99, 0, http_connection_close},//dc
-  {0,                 0, 0, 0, 0},                  // fed
+  {"DELETE",          0,99, 0, http_delete},        // dcba
+  {"close",          20,99, 0, http_connection_close},//dcb
+  {"chunked",        25,99, 0, http_transfer_chunked},//edc
   {"GET",             0,99, 0, http_get},           // gfe
   {"HEAD",            0,99, 0, http_head},          // hgf
   {"HTTP",           10,99, 0, http_proto},         // ihg
@@ -133,12 +134,14 @@ patricia utility[] = //     Offset                     Offsets:
   {0,                 0, 0, 0, 0},                  // xwv
   {0,                 0, 0, 0, 0},                  // yxw
   {0,                 0, 0, 0, 0},                  // zyx
-  {"100-continue",   30,99, 0, http_expect_continue},//?zy
-  {0,                 0, 0, 0, 0},                  //  ?z
-  {0,                 0, 0, 0, 0},                  //   ?
+  {"100-continue",   30,99, 0, http_expect_continue},//?zyx
+  {0,                 0, 0, 0, 0},                  //  ?zy
+  {0,                 0, 0, 0, 0},                  //   ?z
+  {0,                 0, 0, 0, 0},                  //    ?
 };
 
 static const patricia patinitial_connection = { "", 0, 20, 2, 0 };
+static const patricia patinitial_transfer = { "", 0, 25, 3, 0 };
 static const patricia patinitial_expect = { "", 0, 30, 0, 0 };
 
 typedef enum
@@ -155,6 +158,7 @@ typedef enum
   h_value,
   h_head_connection,
   h_head_expect,
+  h_head_transfer_encoding,
   h_head_flag,
   h_error_not_implemented,
   h_error_bad_request,
@@ -579,12 +583,16 @@ minute_http_read (minute_http_rq   *rq,
           tstate.slot = 0;
           switch (r) {
             case http_rq_connection:
-                s.est = h_head_connection;
-                shift (h_value_lead);
+              s.est = h_head_connection;
+              shift (h_value_lead);
               break;
             case http_rq_expect:
-                s.est = h_head_expect;
-                shift (h_value_lead);
+              s.est = h_head_expect;
+              shift (h_value_lead);
+              break;
+            case http_rq_transfer_encoding:
+              s.est = h_head_transfer_encoding;
+              shift (h_value_lead);
               break;
             default: {
               unsigned mask = 1u<<r;
@@ -615,6 +623,10 @@ minute_http_read (minute_http_rq   *rq,
         break;
       case h_head_expect:
         patinitial_flag = &patinitial_expect;
+        reset(h_head_flag);
+        break;
+      case h_head_transfer_encoding:
+        patinitial_flag = &patinitial_transfer;
         reset(h_head_flag);
         break;
       case h_head_flag: {

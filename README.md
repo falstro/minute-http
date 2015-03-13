@@ -18,9 +18,9 @@ libminute-http
 `libminute-http` is the HTTP protocol library, capable of parsing HTTP
 requests. Known headers are recognized and -- if selected by the user -- its
 value stored in a user defined buffer. The exceptions to this rules is that
-the `Connection` and `Expect` headers are interpreted and stored using flags.
-More interpreted headers will likely be added in the future. Unrecognized
-headers are currently ignored.
+the `Connection`, `Expect` and `Transfer-Encoding` headers are interpreted and
+stored using flags.  More interpreted headers will likely be added in the
+future. Unrecognized headers are currently ignored.
 
 Parsing of the request is done using a hand written finite state machine, as
 well as compacted radix tries stored in linear tables to keep the footprint to

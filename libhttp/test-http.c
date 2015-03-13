@@ -20,6 +20,7 @@ main (void)
     "Host: minute.example.org\r\n"
     "Connection: close\r\n"
     "Expect: 100-continue\r\n"
+    "Transfer-Encoding: chunked\r\n"
     "\r\n"
     "This data shouldn't be read\r\n";
   unsigned payloadOffset = strstr(message,"\r\n\r\n")-message+4;
@@ -45,6 +46,7 @@ main (void)
   assert(request.server_protocol == http_1_1);
   assert(request.flags & http_connection_close);
   assert(request.flags & http_expect_continue);
+  assert(request.flags & http_transfer_chunked);
   assert(0 == strcmp(&textbuf[request.path], "/test/uri"));
   assert(0 == strcmp(&textbuf[request.query], "with&query-string"));
   assert(input.read == payloadOffset);
