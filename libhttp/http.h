@@ -160,6 +160,17 @@ void      minute_http_init (unsigned          heads,
                             struct iobuf     *in,
                             struct textint   *text,
                             minute_http_rqs  *state);
+
+/** \brief Initialize request parser state for parsing trailers (i.e. jump
+    straight to parsing headers).
+
+    Parameters are the same as for minute_http_init.
+
+    \see minute_http_init */
+void      minute_http_init_trailers (unsigned          heads,
+                                     struct iobuf     *in,
+                                     struct textint   *text,
+                                     minute_http_rqs  *state);
 #define MINUTE_ALL_HEADERS (~0u)
 #define MINUTE_HEADER_MASK(x) (1<<(x))
 

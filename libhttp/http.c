@@ -304,11 +304,11 @@ uri_uric(int c)
   return uri_unreserved(c) || uri_reserved(c);
 }
 
-void
-minute_http_init (unsigned          hmask,
-                  iobuf            *io,
-                  textint          *text,
-                  minute_http_rqs  *s)
+static void
+minute_http_rqs_init (unsigned          hmask,
+                      iobuf            *io,
+                      textint          *text,
+                      minute_http_rqs  *s)
 {
   minute_http_rqs m = {
     0,          // flags
@@ -324,12 +324,31 @@ minute_http_init (unsigned          hmask,
     text
   };
 
+  *s = m;
+}
+
+void
+minute_http_init (unsigned          hmask,
+                  iobuf            *io,
+                  textint          *text,
+                  minute_http_rqs  *s)
+{
+  minute_http_rqs_init (hmask, io, text, s);
   //let index zero be a nul byte; if strings have index zero, they're
   //invalid, if dereferenced they'll produce the empty string.
   ((char*)text->data)[0] = 0;
   text->text = 1;
   text->ints = text->size;
-  *s = m;
+}
+
+void
+minute_http_init_trailers(unsigned          hmask,
+                          iobuf            *io,
+                          textint          *text,
+                          minute_http_rqs  *s)
+{
+  minute_http_rqs_init (hmask, io, text, s);
+  s->st = h_header;
 }
 
 unsigned
@@ -577,7 +596,7 @@ minute_http_read (minute_http_rq   *rq,
             reset (h_header_unknown)
           } else
           */
-            reset (h_skipline);
+          reset (h_skipline);
         } else if (r > 0) {
           tstate.poff = 0;
           tstate.slot = 0;
