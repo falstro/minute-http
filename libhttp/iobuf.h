@@ -26,7 +26,7 @@ iobuf;
 
 #define IOBUF_EOF   0x01
 
-#define minute_iobuf_used(io) (((io).write-(io).read)&((io).mask))
+#define minute_iobuf_used(io) (((io).write-(io).read))
 #define minute_iobuf_free(io) ((io).mask+1-(minute_iobuf_used(io)))
 
 /** \brief Append a character to the end of the buffer.
@@ -54,9 +54,9 @@ int   minute_iobuf_replace (int         offset,
                             char        c,
                             iobuf      *io);
 
-/** \brief Write sz number of bytes to the IO buffer.
+/** \brief Write nelem number of bytes to the IO buffer.
 
-  \param data   the data buffer to be written from.
+  \param data   the data buffer to be read from.
   \param nelem  the number of bytes to write
   \param io     the io buffer to write to.
   \returns      the number of bytes actually written, or -1 if an error occurs,
@@ -68,12 +68,24 @@ int   minute_iobuf_write   (const char *data,
 
 /**\brief Write zero-terminated string to the IO buffer.
 
-  \param data   the data buffer to be written from.
+  \param data   the data buffer to be read from.
   \param io     the io buffer to write to.
   \returns      the number of bytes actually written, or -1 if an error occurs,
                 i.e. the data did not fit in the buffer.
 */
 int   minute_iobuf_writesz (const char *text,
                             iobuf      *io);
+
+/** \brief Read at most nelem number of bytes to the IO buffer.
+
+  \param data   the data buffer to be written to.
+  \param nelem  the space available in the data buffer.
+  \param io     the io buffer to read from.
+  \returns      the number of bytes actually written to the data buffer, 0 if
+                there's currently no more data in the buffer or if nelem is 0.
+*/
+int   minute_iobuf_read    (char     *data,
+                            unsigned  nelem,
+                            iobuf    *io);
 
 #endif /* idempotent include guard */

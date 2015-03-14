@@ -55,3 +55,30 @@ minute_iobuf_writesz (const char *text,
 {
   return minute_iobuf_write(text, strlen(text), io);
 }
+
+int
+minute_iobuf_read  (char     *data,
+                    unsigned  sz,
+                    iobuf    *io)
+{
+  unsigned b = io->read;
+  unsigned e = io->write;
+  unsigned l, ei, bi = b&io->mask;
+
+  if (e-b > sz) e = b + sz;
+
+  l = e-b;
+  ei = e&io->mask;
+
+  if (ei < bi) {
+    int tail = io->mask + 1 - bi;
+    memcpy (data, io->data + bi, tail);
+    memcpy (data+tail, io->data, l-tail);
+  } else if (l) {
+    memcpy (data, io->data + bi, l);
+  }
+
+  io->read = e;
+
+  return l;
+}
