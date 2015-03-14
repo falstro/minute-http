@@ -27,7 +27,7 @@ test_head  (minute_http_rq     *rq,
            &((char*)text->data)[rq->path], &((char*)text->data)[rq->query]);
   head->string (http_rsp_set_cookie, buffer, head);
   head->timestamp (http_rsp_last_modified, 1314524588, head);
-  return 200;
+  return 100;
 }
 
 static void
@@ -38,7 +38,22 @@ test_error   (minute_http_rq   *rq,
 }
 
 static unsigned
-test_payload (minute_http_rq   *rq,
+test_payload (minute_http_rq    *rq,
+              minute_httpd_head *head,
+              minute_httpd_in   *in,
+              textint           *text,
+              void              *user)
+{
+  char x[64] = "in payload: ";
+  int n = strlen(x);
+  n += in->read(x+n, 64-n, in);
+  x[n] = 0;
+  head->string(http_rsp_etag, x, head);
+  return 200;
+}
+
+static unsigned
+test_response(minute_http_rq   *rq,
               minute_httpd_out *out,
               textint          *text,
               unsigned          status,
@@ -46,11 +61,12 @@ test_payload (minute_http_rq   *rq,
 {
   char x[64];
   out->write(x,
-    snprintf (x, sizeof(x), "in payload, status: %d\n", status),
+    snprintf (x, sizeof(x), "in response, status: %d\n", status),
     out
   );
   return 0;
 }
+
 
 static int
 test_inetd()
@@ -58,6 +74,7 @@ test_inetd()
   minute_httpd_app app = {
     test_head,
     test_payload,
+    test_response,
     test_error
   };
   return minute_httpd_handle (0, 1, &app, 0);
@@ -70,8 +87,15 @@ main (void)
 {
   return
   run_test (test_inetd,
-    "GET /test/uri?with&query%20string HTTP/1.1\r\n"
+    "POST /test/uri?with&query%20string HTTP/1.1\r\n"
     "Host: minute.example.org\r\n"
+    "Expect: 100-continue\r\n"
+    "Transfer-Encoding: chunked\r\n"
+    "\r\n"
+    "5\r\n"
+    "12345\r\n"
+    "0\r\n"
+    "Content-Type: text/plain\r\n"
     "\r\n"
     "GET / HTTP/1.1\r\n"
     "Connection: close\r\n"

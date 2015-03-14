@@ -35,9 +35,22 @@ minute_httpd_head
 }
 minute_httpd_head;
 
-/** \brief Structure passed to the payload processing of the application and
-           allows outputting the actual payload of the response.
-*/
+/** \brief Structure passed to the application for reading the request payload
+ */
+typedef struct
+minute_httpd_in
+{
+  /** \brief Read data from the input buffer
+    * \return Number of bytes read, 0 on end of input or negative on error. */
+  int (*read) (char *buf,
+               unsigned count,
+               struct minute_httpd_in*);
+}
+minute_httpd_in;
+
+/** \brief Structure passed to the application for generating the response
+ *         payload.
+ */
 typedef struct
 minute_httpd_out
 {
@@ -60,7 +73,7 @@ minute_httpd_out;
 typedef struct
 minute_httpd_app
 {
-      /** Application head processing function.
+      /** Application header processing function.
        *
        *  Called first to examine the request and determine the outcome,
        *  including what headers to send.
@@ -71,21 +84,48 @@ minute_httpd_app
        *                  if requested.
        *  \param user     The supplied user data pointer.
        *
+       *  \return The HTTP response code to send, e.g. 200. Return 100 to visit
+       *          the request payload function regardless whether Expect:
+       *          100-continue was requested by the client.
+      **/
+      unsigned (*header)   (minute_http_rq     *request,
+                            minute_httpd_head  *head,
+                            struct textint     *text,
+                            void               *user);
+
+      /** Application request payload processing function.
+       *
+       *  Called if the head function returns 100. If the client sent an
+       *  Expect: 100-continue header, a 100 Continue will be sent before this
+       *  function is called. Response headers may still be set at this point.
+       *
+       *  NOTE: Only called if the headers function returns 100, regardless
+       *        whether the Expect: 100-continue header is set or not.
+       *
+       *  \param request  The incoming request.
+       *  \param head     API functions for writing header fields.
+       *  \param payload  API functions for reading request payload.
+       *  \param text     The text buffer used to store request header values,
+       *                  if requested.
+       *  \param user     The supplied user data pointer.
+       *
        *  \return The HTTP response code to send, e.g. 200.
       **/
-      unsigned (*head)   (minute_http_rq     *request,
-                          minute_httpd_head  *head,
-                          struct textint     *text,
-                          void               *user);
+      unsigned (*payload)  (minute_http_rq     *request,
+                            minute_httpd_head  *head,
+                            minute_httpd_in    *payload,
+                            struct textint     *text,
+                            void               *user);
 
-      /** Application payload function.
+      /** Application response payload function.
        *
-       *  Called after the payload function to actually produce the response
+       *  Called after the head function to actually produce the response
        *  payload. No headers can be set at this point, and the status code
        *  may no longer be changed.
        *
        *  NOTE: Not called if we're processing a HEAD request or if the head
-       *        function returned a 204 (No content) code.
+       *        function returned a 204 No content, a 205 Reset content, or
+       *        a 304 Not modified code.
        *
        *  \param request  The incoming request.
        *  \param output   API functions for payload output. The output is
@@ -99,11 +139,11 @@ minute_httpd_app
        *          is returned and no actual payload data has been sent, a
        *          generic body will be generated using the status code.
       **/
-      unsigned (*payload)(minute_http_rq   *request,
-                          minute_httpd_out *output,
-                          struct textint   *text,
-                          unsigned          status,
-                          void             *user);
+      unsigned (*response) (minute_http_rq   *request,
+                            minute_httpd_out *output,
+                            struct textint   *text,
+                            unsigned          status,
+                            void             *user);
 
       /** Application error function.
        *
