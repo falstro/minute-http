@@ -228,7 +228,10 @@ minute_httpd_in_read(char *buf, unsigned count, minute_httpd_in* in)
       }
       // read more.
     } else {
-      // not chunked, we're done here.
+      // not chunked, we're done here. This won't consume the cr/lf at the
+      // end of the payload, however 1) the request parser will skip leading
+      // cr/lf, and 2) if there is no payload, we won't have a trailing
+      // cr/lf.
       resp->in.pending = PENDING_EOF;
       return 0;
     }
@@ -386,7 +389,9 @@ minute_httpd_init (httpd_response  *resp)
 
   if (resp->rq.flags & http_transfer_chunked)
     resp->in.pending = PENDING_INIT;
-  // TODO else content-length. What about non-keep-alive connections?
+  else if(resp->rq.flags & http_content_length)
+    resp->in.pending = resp->rq.content_length;
+  // TODO What about non-keep-alive connections?
 
   return 0;
 }

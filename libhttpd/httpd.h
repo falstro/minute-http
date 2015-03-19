@@ -135,7 +135,7 @@ minute_httpd_app
        *  \param status   The status code returned by the head function.
        *  \param user     The supplied user data pointer.
        *
-       *  \return Zero on succes, non-zero otherwise. In case a non-zero status
+       *  \return Zero on success, non-zero otherwise. In case a non-zero status
        *          is returned and no actual payload data has been sent, a
        *          generic body will be generated using the status code.
       **/

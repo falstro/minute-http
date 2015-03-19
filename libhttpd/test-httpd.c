@@ -46,7 +46,7 @@ test_payload (minute_http_rq    *rq,
 {
   char x[64] = "in payload: ";
   int n = strlen(x);
-  n += in->read(x+n, 64-n, in);
+  n += in->read(x+n, sizeof(x)-n, in);
   x[n] = 0;
   head->string(http_rsp_etag, x, head);
   return 200;
@@ -91,12 +91,18 @@ main (void)
     "Host: minute.example.org\r\n"
     "Expect: 100-continue\r\n"
     "Transfer-Encoding: chunked\r\n"
+    "Content-Length: 5\r\n"
     "\r\n"
     "5\r\n"
     "12345\r\n"
     "0\r\n"
     "Content-Type: text/plain\r\n"
     "\r\n"
+    "POST /test/uri?with&query%20string HTTP/1.1\r\n"
+    "Host: minute.example.org\r\n"
+    "Content-Length: 5\r\n"
+    "\r\n"
+    "12345\r\n"
     "GET / HTTP/1.1\r\n"
     "Connection: close\r\n"
     "\r\n", 0)

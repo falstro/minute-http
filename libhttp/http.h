@@ -86,7 +86,8 @@ http_header_flags
   http_connection_close = 0x01,
   http_connection_keep  = 0x02,
   http_expect_continue  = 0x04,
-  http_transfer_chunked = 0x08
+  http_transfer_chunked = 0x08,
+  http_content_length   = 0x10
 };
 
 /** \brief Structure for the parsed request.
@@ -107,6 +108,8 @@ minute_http_rq
 
   unsigned      path;
   unsigned      query;
+
+  unsigned      content_length;
 }
 minute_http_rq;
 

@@ -157,6 +157,7 @@ typedef enum
   h_value_lead, h_cont,
   h_value,
   h_head_connection,
+  h_head_content_length,
   h_head_expect,
   h_head_transfer_encoding,
   h_head_flag,
@@ -605,6 +606,11 @@ minute_http_read (minute_http_rq   *rq,
               s.est = h_head_connection;
               shift (h_value_lead);
               break;
+            case http_rq_content_length:
+              s.est = h_head_content_length;
+              s.esc = 0;
+              shift (h_value_lead);
+              break;
             case http_rq_expect:
               s.est = h_head_expect;
               shift (h_value_lead);
@@ -639,6 +645,17 @@ minute_http_read (minute_http_rq   *rq,
       case h_head_connection:
         patinitial_flag = &patinitial_connection;
         reset(h_head_flag);
+        break;
+      case h_head_content_length:
+        if (c >= '0' && c <= '9') {
+          s.esc = s.esc * 10 + (c-'0');
+        } else if (c == 13) {
+          rq->flags |= http_content_length;
+          rq->content_length = s.esc;
+          shift (h_cr);
+        } else {
+          reset (h_error_bad_request);
+        }
         break;
       case h_head_expect:
         patinitial_flag = &patinitial_expect;
