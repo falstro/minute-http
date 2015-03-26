@@ -1,5 +1,12 @@
 #include "textint.h"
 
+textint
+minute_textint_init (unsigned size, void *data)
+{
+  textint r = {0, size, size, data};
+  return r;
+}
+
 unsigned
 minute_textint_textsize (textint *txt)
 {

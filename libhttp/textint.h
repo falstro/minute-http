@@ -5,6 +5,9 @@
 
     Text grows up and integers grow down. It is up to the client
     to ensure that the buffer is properly aligned.
+
+    //TODO switch text/ints around, thus making the buffer int aligned
+    //not the end of the buffer.
 */
 typedef struct
 textint
@@ -15,6 +18,10 @@ textint
   void *data;
 }
 textint;
+
+/** \breif Constructor function for initializing a textint buffer */
+textint   minute_textint_init      (unsigned size,
+                                    void *data);
 
 /** \brief Query the number of characters stored in the buffer */
 unsigned  minute_textint_textsize  (textint *text);

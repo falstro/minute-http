@@ -29,6 +29,9 @@ iobuf;
 #define minute_iobuf_used(io) (((io).write-(io).read))
 #define minute_iobuf_free(io) ((io).mask+1-(minute_iobuf_used(io)))
 
+/** \brief Constructor function for initializing an iobuf buffer */
+iobuf minute_iobuf_init    (unsigned size, char *data);
+
 /** \brief Append a character to the end of the buffer.
 
   \param c    the character to append.

@@ -1,6 +1,13 @@
 #include "iobuf.h"
 #include <string.h>
 
+iobuf
+minute_iobuf_init    (unsigned size, char *data)
+{
+  iobuf r = {0, 0, size-1, 0, data};
+  return r;
+}
+
 int
 minute_iobuf_put     (const char  c,
                       iobuf      *io)
