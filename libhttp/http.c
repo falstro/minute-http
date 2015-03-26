@@ -649,10 +649,12 @@ minute_http_read (minute_http_rq   *rq,
       case h_head_content_length:
         if (c >= '0' && c <= '9') {
           s.esc = s.esc * 10 + (c-'0');
-        } else if (c == 13) {
+        } else if (c == '\r') {
           rq->flags |= http_content_length;
           rq->content_length = s.esc;
           shift (h_cr);
+        } else if (c == '\n') {
+          reset (h_cr);
         } else {
           reset (h_error_bad_request);
         }
