@@ -77,7 +77,24 @@ test_inetd()
     test_response,
     test_error
   };
-  return minute_httpd_handle (0, 1, &app, 0);
+  minute_httpd_state state;
+
+  char inbuf[0x100];
+  char outbuf[0x400];
+  char textbuf[0x400];
+  int status;
+
+  minute_httpd_init(0, 1,
+    minute_iobuf_init(sizeof(inbuf), inbuf),
+    minute_iobuf_init(sizeof(outbuf), outbuf),
+    minute_textint_init(sizeof(textbuf), textbuf),
+    &state
+    );
+
+  while (httpd_client_ok_open == (status = minute_httpd_handle (&app,&state,0)))
+    ;
+
+  return status;
 }
 
 int run_test(int (*testfunc)(void), const char *request, int expected);
@@ -105,7 +122,7 @@ main (void)
     "12345\r\n"
     "GET / HTTP/1.1\r\n"
     "Connection: close\r\n"
-    "\r\n", 0)
+    "\r\n", httpd_client_ok_close)
   ||
   run_test (test_inetd,
     "GSET / HTTP/1.1\r\n"

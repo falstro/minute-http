@@ -1,9 +1,34 @@
 #ifndef __MINUTE_HTTPD_H__
 #define __MINUTE_HTTPD_H__
 
+#include "libhttp/http.h"
+#include "libhttp/iobuf.h"
+#include "libhttp/textint.h"
+
 enum http_response_header;
-struct textint;
-struct iobuf;
+
+/** \brief HTTPd connection state, keeps track of everything needed for serving
+           all requests (including pipelined ones) on a single connection.
+
+    Although the input buffer is only used while parsing the request, we cant
+    reuse it for output buffering during processing as requests may be
+    pipelined in which case there'd still be data to be read in the buffer for
+    the next request. The text buffer is filled on parsing and read while
+    processing, and will be cleared between requests.
+ */
+typedef struct
+minute_httpd_state
+{
+  minute_http_rqs rqs;
+
+  iobuf           in;
+  iobuf           out;
+  textint         text;
+
+  int             infd;
+  int             outfd;
+}
+minute_httpd_state;
 
 /** \brief Structure passed to the head processing of the application and
            allows setting headers in the response.
@@ -167,10 +192,21 @@ minute_httpd_app;
 
 enum httpd_client_status
 {
-  httpd_client_ok = 0,
-  /** Client made no request */
+  /** Client made a request, connection remains open */
+  httpd_client_ok_open = 0,
+  /** Client made a request, and requested the connection be closed */
+  httpd_client_ok_close,
+  /** Client made no request and closed the connection. */
   httpd_client_no_request
 };
+
+/** \brief Initialize the HTTPd connection state. */
+void  minute_httpd_init  (int                 read,
+                          int                 write,
+                          iobuf               in,
+                          iobuf               out,
+                          textint             text,
+                          minute_httpd_state *state);
 
 /** \brief Handle request using file descriptors.
 
@@ -184,9 +220,8 @@ enum httpd_client_status
             code of the last request; returned when the parsing of the request
             failed and the connection should be closed.
 */
-int   minute_httpd_handle  (int read,
-                            int write,
-                            minute_httpd_app*,
+int   minute_httpd_handle  (minute_httpd_app*,
+                            minute_httpd_state*,
                             void*);
 
 #endif
