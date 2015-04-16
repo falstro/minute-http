@@ -1,10 +1,17 @@
 #include "textint.h"
 
 textint
-minute_textint_init (unsigned size, void *data)
+minute_textint_init  (unsigned size, void *data)
 {
   textint r = {0, size, size, data};
   return r;
+}
+
+void
+minute_textint_clear (textint *text)
+{
+  text->text = 0;
+  text->ints = text->size;
 }
 
 unsigned

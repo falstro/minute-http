@@ -8,6 +8,12 @@ minute_iobuf_init    (unsigned size, char *data)
   return r;
 }
 
+void
+minute_iobuf_clear   (iobuf *io)
+{
+  io->read = io->write = 0;
+}
+
 int
 minute_iobuf_put     (const char  c,
                       iobuf      *io)

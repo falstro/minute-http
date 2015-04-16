@@ -30,7 +30,10 @@ iobuf;
 #define minute_iobuf_free(io) ((io).mask+1-(minute_iobuf_used(io)))
 
 /** \brief Constructor function for initializing an iobuf buffer */
-iobuf minute_iobuf_init    (unsigned size, char *data);
+iobuf minute_iobuf_init    (unsigned size,
+                            char *data);
+/** \brief Clear I/O buffer */
+void  minute_iobuf_clear   (iobuf   *io);
 
 /** \brief Append a character to the end of the buffer.
 

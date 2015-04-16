@@ -22,6 +22,8 @@ textint;
 /** \breif Constructor function for initializing a textint buffer */
 textint   minute_textint_init      (unsigned size,
                                     void *data);
+/** \brief Clear I/O buffer */
+void      minute_textint_clear     (textint *text);
 
 /** \brief Query the number of characters stored in the buffer */
 unsigned  minute_textint_textsize  (textint *text);
