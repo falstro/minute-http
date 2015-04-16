@@ -19,8 +19,6 @@ enum http_response_header;
 typedef struct
 minute_httpd_state
 {
-  minute_http_rqs rqs;
-
   iobuf           in;
   iobuf           out;
   textint         text;

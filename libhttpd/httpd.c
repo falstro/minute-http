@@ -94,11 +94,11 @@ typedef enum
 chunk_state;
 
 static int
-minute_httpd_read_request(httpd_response *resp)
+minute_httpd_read_request(httpd_response   *resp,
+                          minute_http_rqs  *rqs)
 {
   minute_httpd_state *state = resp->state;
   iobuf *in = &state->in;
-  minute_http_rqs *rqs = &state->rqs;
   int status;
   if(minute_iobuf_used(*in) > 0)
     goto prefilled; //yes, gotos do have proper uses.
@@ -202,7 +202,7 @@ minute_httpd_in_read(char *buf, unsigned count, minute_httpd_in* in)
                 minute_http_rqs rqs = {};
                 minute_http_init_trailers(MINUTE_ALL_HEADERS,
                   &state->in, &state->text, &rqs);
-                status = minute_httpd_read_request (resp);
+                status = minute_httpd_read_request (resp, &rqs);
                 //any non-zero status means failure.
                 return status ? -1 : 0;
               } else {
@@ -471,10 +471,6 @@ minute_httpd_init    (int       readfd,
 
   state->infd = readfd;
   state->outfd = writefd;
-
-  //TODO parameterized header mask, remember to use for trailers too.
-  minute_http_init(MINUTE_ALL_HEADERS, &state->in, &state->text,
-    &state->rqs);
 }
 
 int
@@ -512,7 +508,14 @@ minute_httpd_handle  (minute_httpd_app *app,
   int status = 0;
   memset (&resp.rq, 0, sizeof(resp.rq));
 
-  status = minute_httpd_read_request(&resp);
+  minute_iobuf_clear(&state->out);
+  minute_textint_clear(&state->text);
+
+  //TODO parameterized header mask, remember to use for trailers too.
+  minute_http_rqs rqs = {};
+  minute_http_init(MINUTE_ALL_HEADERS, &state->in, &state->text, &rqs);
+
+  status = minute_httpd_read_request(&resp, &rqs);
 
   if (status < 0) {
     // client closed connection.
