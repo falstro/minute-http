@@ -30,8 +30,9 @@
 #include <sys/wait.h>
 
 static const char *s_application = "application";
-static const char *s_head = "head";
+static const char *s_headers = "headers";
 static const char *s_payload = "payload";
+static const char *s_response = "response";
 
 static const char *s__minuted = "/minuted";
 
@@ -174,6 +175,8 @@ minuted_serve_load (runstate *rs)
       break;
     } else {
       Tcl_Interp *s = minuted_tap_create(tcl, name);
+      //TODO move this to tap.c?
+
       if(Tcl_EvalFile(s, Tcl_GetString(app))) {
         //TODO full stack trace? at least the file name?
         error(Tcl_GetStringResult(s));
@@ -181,14 +184,19 @@ minuted_serve_load (runstate *rs)
         break;
       }
 
-      if(Tcl_GetCommandInfo(s, s_head, &rs->tap.v[i].head) != 1) {
-        error("Application has no head");
+      if(Tcl_GetCommandInfo(s, s_headers, &rs->tap.v[i].headers) != 1) {
+        error("Application has no headers function");
         res = -1;
         break;
       }
 
       if(Tcl_GetCommandInfo(s, s_payload, &rs->tap.v[i].payload) != 1) {
-        error("Application has no payload");
+        info("Application has no payload function");
+        rs->tap.v[i].flags |= TAP_NO_PAYLOAD;
+      }
+
+      if(Tcl_GetCommandInfo(s, s_response, &rs->tap.v[i].response) != 1) {
+        error("Application has no response function");
         res = -1;
         break;
       }

@@ -15,3 +15,6 @@ minuted: main.o minuted.o tap.o config.o \
 include $(ROOT)/Makefile.frame
 
 CFLAGS+=-D_POSIX_C_SOURCE=200112L
+ifeq ($(SINGLE),1)
+CFLAGS+=-DMINUTED_SINGLE_PROCESS
+endif

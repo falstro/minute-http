@@ -5,12 +5,17 @@
 
 struct configuration;
 
+#define TAP_NO_PAYLOAD 0x01
+
 struct tap_vhost
 {
-  Tcl_Interp  *tcl;
+  Tcl_Interp *tcl;
 
-  Tcl_CmdInfo  head;
-  Tcl_CmdInfo  payload;
+  unsigned    flags;
+
+  Tcl_CmdInfo headers;
+  Tcl_CmdInfo payload;
+  Tcl_CmdInfo response;
 };
 
 struct tap_runtime

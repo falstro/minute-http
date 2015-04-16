@@ -84,12 +84,14 @@ There are three accepted comment styles in the minuted configuration
   2. C++-style //-comment. This is in reality a TCL command which ignores
      all arguments. This also means that braces can be used to make the comment
      multi-line. Note that braces need to be balanced.
-  3. C-style /* */-comments. Same deal as with //-comments, this is in reality
-     a TCL command, thus it'll be single line unless you use braces. To make
-     sure we don't accidentally close the comment early, it checks that the
-     last argument is a '*/' token. Furthermore, since it's actually a command
-     the braces need to be balanced, and thus these comments do nest as
-     opposed to their C brethren.
+  3. C-style /\* \*/-comments. Same deal as with //-comments, this is in
+     reality a TCL command, thus it'll be single line unless you use braces. To
+     make sure we don't accidentally close the comment early, it checks that
+     the last argument is a '\*/' token. Furthermore, since it's actually a
+     command the braces need to be balanced, and thus these comments do nest
+     as opposed to their C brethren. (If you're reading the markdown source,
+     note that the backslashes are for escaping the asterisk in markdown, and
+     shouldn't actually be used in the config.)
 
 Virtual hosts
 -------------
