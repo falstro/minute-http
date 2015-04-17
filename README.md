@@ -13,7 +13,7 @@ below, and only work with client supplied buffers.
 There are plenty of TODOs around the code. Be wary.
 
 I've tried to maintain doxygen comments throughout the code, however there's
-currently make target or doxygen configuration to generate any standalone
+currently no make target or doxygen configuration to generate any standalone
 documentation. There's also currently no real 'usage' description for the
 libraries, but feel free to look around the `minuted` code for examples how
 they're used. For a usage description of `minuted`, see below.
