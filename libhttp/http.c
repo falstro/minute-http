@@ -352,6 +352,13 @@ minute_http_init_trailers(unsigned          hmask,
   s->st = h_header;
 }
 
+#ifdef DEBUG_MINUTE_HTTP_READ
+#  include <stdio.h>
+#  define D(x) fprintf(stderr,x "\n")
+#else
+#  define D(x)
+#endif
+
 unsigned
 minute_http_read (minute_http_rq   *rq,
                   minute_http_rqs  *rqs)
@@ -368,13 +375,6 @@ minute_http_read (minute_http_rq   *rq,
 
   const patricia *patinitial_flag = NULL;
   triestate tstate = {s.tries[0], s.tries[1]};
-
-# ifdef DEBUG_MINUTE_HTTP_READ
-#   include <stdio.h>
-#   define D(x) fprintf(stderr,x "\n")
-# else
-#   define D(x)
-# endif
 
 # define H_EOF (-1)
 # define shift(x) do{D("shift("#x")");s.st=(x);}while(0)
