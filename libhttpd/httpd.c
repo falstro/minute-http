@@ -200,6 +200,7 @@ minute_httpd_in_read(char *buf, unsigned count, minute_httpd_in* in)
                 int status;
                 resp->in.pending = PENDING_EOF;
                 minute_http_rqs rqs = {};
+                //TODO only headers specified in the Trailers header?
                 minute_http_init_trailers(MINUTE_ALL_HEADERS,
                   &state->in, &state->text, &rqs);
                 status = minute_httpd_read_request (resp, &rqs);
