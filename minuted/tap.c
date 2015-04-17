@@ -32,7 +32,13 @@ tap_rq_data
   tap_vhost    *vhost;
   Tcl_Obj      *o_path;
   Tcl_Obj      *o_query;
+  Tcl_Obj      *o_host;
+  enum
+  http_method   method;
+
+  // set throughout
   Tcl_Obj      *status;
+  int           code;
 }
 tap_rq_data;
 
@@ -205,10 +211,14 @@ minuted_tap_reset (tap_rq_data *rqd)
 {
   rqd->vhost = NULL;
 
+  rqd->method = http_unknown_method;
+  rqd->code   = 0;
+
   Tcl_Obj **refs[] = {
     &rqd->status,
     &rqd->o_path,
-    &rqd->o_query
+    &rqd->o_query,
+    &rqd->o_host
   };
   for(int i = 0; i < sizeof(refs)/sizeof(refs[0]); ++i)
     if(*refs[i]) {
@@ -244,6 +254,8 @@ minuted_tap_status (tap_rq_data *rqd)
     Tcl_IncrRefCount(rqd->status);
   if(old)
     Tcl_DecrRefCount(old);
+
+  rqd->code = res;
   return res;
 }
 
@@ -436,7 +448,7 @@ minuted_tap_head (minute_http_rq     *rq,
   } else if ((r = Tcl_DictObjGet(tcl, rs->vhostMap, acthost, &id)) != TCL_OK) {
     error("Internal vhostMap failure");
   }
-  Tcl_IncrRefCount(acthost);
+  Tcl_IncrRefCount(rqd->o_host = acthost);
   Tcl_DecrRefCount(defhost);
   Tcl_DecrRefCount(host);
 
@@ -492,23 +504,7 @@ minuted_tap_head (minute_http_rq     *rq,
     }
   }
 
-  //TODO move this to proper logging.
-  const char *method;
-  switch(rq->request_method) {
-    default:
-    case http_unknown_method: method = "???"; break;
-    case http_get:      method = "GET";     break;
-    case http_post:     method = "POST";    break;
-    case http_put:      method = "PUT";     break;
-    case http_delete:   method = "DELETE";  break;
-    case http_head:     method = "HEAD";    break;
-    case http_options:  method = "OPTIONS"; break;
-    case http_trace:    method = "TRACE";   break;
-    case http_connect:  method = "CONNECT"; break;
-  }
-  acclog("%s %s %s%s%s %d",
-    Tcl_GetString(acthost), method, path, *query?"?":"", query, res);
-  Tcl_DecrRefCount(acthost);
+  rqd->method = rq->request_method;
 
   return res;
 }
@@ -662,8 +658,40 @@ minuted_tap_handle (int           sock,
     minute_textint_init(sizeof(textbuf), textbuf),
     &state);
 
+  // should be superfluous, but just in case something shouldn't be zero,
+  // do a proper initial reset.
+  minuted_tap_reset (&rqd);
+
+
   do {
     r = minute_httpd_handle(&app,&state,&rqd);
+
+    //TODO move this to proper logging.
+    const char *method;
+    switch(r) {
+      case httpd_client_ok_open:
+      case httpd_client_ok_close: {
+        const char *query = Tcl_GetString(rqd.o_query);
+        switch(rqd.method) {
+          default:
+          case http_unknown_method: method = "???"; break;
+          case http_get:      method = "GET";     break;
+          case http_post:     method = "POST";    break;
+          case http_put:      method = "PUT";     break;
+          case http_delete:   method = "DELETE";  break;
+          case http_head:     method = "HEAD";    break;
+          case http_options:  method = "OPTIONS"; break;
+          case http_trace:    method = "TRACE";   break;
+          case http_connect:  method = "CONNECT"; break;
+        }
+        acclog("%s %s %s%s%s %d",
+          Tcl_GetString(rqd.o_host), method,
+          Tcl_GetString(rqd.o_path),
+          *query?"?":"", query,
+          rqd.code);
+      }
+      break;
+    }
 
     minuted_tap_reset (&rqd);
   } while(r == httpd_client_ok_open);
