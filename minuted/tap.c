@@ -65,12 +65,19 @@ tap_request_resp
 }
 tap_request_resp;
 
+typedef struct
+{
+  minute_httpd_in *in;
+  minute_httpd_out *out;
+}
+minuted_tap_channel;
+
 static int
 minuted_tap_close_proc   (ClientData  instanceData,
                           Tcl_Interp *tcl)
 {
-  minute_httpd_out *out = instanceData;
-  out->flush(out);
+  minuted_tap_channel *ch = instanceData;
+  ch->out->flush(ch->out);
   return 0;
 }
 
@@ -87,8 +94,8 @@ minuted_tap_input_proc   (ClientData  instanceData,
                           int         toWrite,
                           int        *errorCodePtr)
 {
-  //TODO implement reading request payload
-  return 0;
+  minuted_tap_channel *ch = instanceData;
+  return ch->in->read(buf, toWrite, ch->in);
 }
 
 static int
@@ -97,8 +104,8 @@ minuted_tap_output_proc  (ClientData  instanceData,
                           int         toWrite,
                           int        *errorCodePtr)
 {
-  minute_httpd_out *out = instanceData;
-  return out->write(buf, toWrite, out);
+  minuted_tap_channel *ch = instanceData;
+  return ch->out->write(buf, toWrite, ch->out);
 }
 
 static int
@@ -523,10 +530,12 @@ minuted_tap_payload  (minute_http_rq     *rq,
   if(v->flags & TAP_NO_PAYLOAD)
     return 500;
 
+  minuted_tap_channel ch = {in, NULL};
+
   //TODO generate channel name.
   Tcl_Channel channel = Tcl_CreateChannel(
     &minuted_tap_input_channel, s_tap_io,
-    in, TCL_READABLE
+    &ch, TCL_READABLE
   );
 
   Tcl_Obj *o_proc = Tcl_NewStringObj(s_payload, -1);
@@ -565,6 +574,7 @@ minuted_tap_payload  (minute_http_rq     *rq,
 static unsigned
 minuted_tap_response (minute_http_rq   *rq,
                       minute_httpd_out *out,
+                      minute_httpd_in  *in,
                       textint          *text,
                       unsigned          status,
                       void             *rsvoid)
@@ -576,11 +586,14 @@ minuted_tap_response (minute_http_rq   *rq,
   if (!v)
     return 1;
 
+  //channel will be destroyed before we leave this function, so it's ok
+  //to just keep it on the stack.
+  minuted_tap_channel ch = {in, out};
+
   //TODO generate channel name.
-  //TODO read/write channel in response?
   Tcl_Channel channel = Tcl_CreateChannel(
     &minuted_tap_inout_channel, s_tap_io,
-    out, TCL_WRITABLE
+    &ch, TCL_WRITABLE|TCL_READABLE
   );
 
   Tcl_Obj *o_proc = Tcl_NewStringObj(s_response, -1);

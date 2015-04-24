@@ -611,15 +611,22 @@ minute_httpd_handle  (minute_httpd_app *app,
       case http_reset_content:
       case http_not_modified:
         break;
-      default:
+      default: {
+        unsigned response =
+          app->response(&resp.rq,
+                        &resp.out.base,
+                        &resp.in.base,
+                        &state->text,
+                        status,
+                        user);
         headermark = state->out.write; // end of the headers.
-        if (app->response(&resp.rq,&resp.out.base,&state->text,status,user)
-            && state->out.write == headermark)
+        if (response && state->out.write == headermark)
         {
           // only send if the app payload returned non-zero, and it hasn't
           // written anything beyond the headers.
           minute_httpd_standard_body(status, &resp);
         }
+      }
     }
   }
 

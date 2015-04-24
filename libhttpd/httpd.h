@@ -153,6 +153,8 @@ minute_httpd_app
        *  \param request  The incoming request.
        *  \param output   API functions for payload output. The output is
        *                  buffered.
+       *  \param payload  API functions for reading request payload, if there
+       *                  is still anything to be read at this point.
        *  \param text     The text buffer used to store request header values,
        *                  if requested.
        *  \param status   The status code returned by the head function.
@@ -160,10 +162,11 @@ minute_httpd_app
        *
        *  \return Zero on success, non-zero otherwise. In case a non-zero status
        *          is returned and no actual payload data has been sent, a
-       *          generic body will be generated using the status code.
+       *          generic HTML body will be generated using the status code.
       **/
       unsigned (*response) (minute_http_rq   *request,
                             minute_httpd_out *output,
+                            minute_httpd_in  *payload,
                             struct textint   *text,
                             unsigned          status,
                             void             *user);
