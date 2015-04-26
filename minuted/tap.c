@@ -262,7 +262,6 @@ minuted_tap_status (tap_rq_data *rqd)
   if(old)
     Tcl_DecrRefCount(old);
 
-  rqd->code = res;
   return res;
 }
 
@@ -459,6 +458,9 @@ minuted_tap_head (minute_http_rq     *rq,
   Tcl_DecrRefCount(defhost);
   Tcl_DecrRefCount(host);
 
+  Tcl_IncrRefCount(rqd->o_path = Tcl_NewStringObj(path, -1));
+  Tcl_IncrRefCount(rqd->o_query = Tcl_NewStringObj(query, -1));
+
   if(r != TCL_OK) {
     res = 500;
   } else if(!vhost) {
@@ -480,8 +482,6 @@ minuted_tap_head (minute_http_rq     *rq,
 
     //TODO interned strings.
     Tcl_Obj *o_proc = Tcl_NewStringObj(s_head, -1);
-    Tcl_IncrRefCount(rqd->o_path = Tcl_NewStringObj(path, -1));
-    Tcl_IncrRefCount(rqd->o_query = Tcl_NewStringObj(query, -1));
     Tcl_Obj *o_meta;
 
     tap_request_head trq = {{rq, text, rqd}, head};
@@ -512,6 +512,7 @@ minuted_tap_head (minute_http_rq     *rq,
   }
 
   rqd->method = rq->request_method;
+  rqd->code = res;
 
   return res;
 }
@@ -528,7 +529,7 @@ minuted_tap_payload  (minute_http_rq     *rq,
   tap_vhost   *v     = rqd->vhost;
 
   if(v->flags & TAP_NO_PAYLOAD)
-    return 500;
+    return rqd->code = 500;
 
   minuted_tap_channel ch = {in, NULL};
 
@@ -565,10 +566,10 @@ minuted_tap_payload  (minute_http_rq     *rq,
 
   if(r != TCL_OK) {
     error("Payload processing failed: %s", Tcl_GetStringResult(v->tcl));
-    return 500;
+    return rqd->code = 500;
   }
 
-  return minuted_tap_status(rqd);
+  return rqd->code = minuted_tap_status(rqd);
 }
 
 static unsigned
