@@ -546,6 +546,7 @@ minute_httpd_handle  (minute_httpd_app *app,
     minute_httpd_standard_body(status, &resp);
     minute_httpd_flush (&resp.out.base);
     minute_httpd_chunk_end (&resp);
+    app->error (&resp.rq, status, user);
     return -status;
   } else {
     unsigned headermark, nproto;
