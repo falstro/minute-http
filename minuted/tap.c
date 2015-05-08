@@ -4,12 +4,16 @@
 
 #include "libhttp/http.h"
 #include "libhttp/http-headers.h"
+#include "libhttp/http-text.h"
 #include "libhttp/textint.h"
 #include "libhttpd/httpd.h"
 
 #include <errno.h>
 #include <strings.h>
 #include <string.h>
+
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 typedef struct tap_runtime tap_runtime;
 typedef struct tap_vhost tap_vhost;
@@ -27,6 +31,7 @@ tap_rq_data
   // set by handle()
   tap_runtime  *rs;
   int           listenId;
+  int           sock;
 
   // set by head()
   tap_vhost    *vhost;
@@ -628,12 +633,50 @@ minuted_tap_response (minute_http_rq   *rq,
 
   return 0;
 }
+
+static const char*
+minuted_tap_method_name(enum http_method m)
+{
+  switch(m) {
+    default:
+    case http_unknown_method: return "???";
+    case http_get:      return "GET";
+    case http_post:     return "POST";
+    case http_put:      return "PUT";
+    case http_delete:   return "DELETE";
+    case http_head:     return "HEAD";
+    case http_options:  return "OPTIONS";
+    case http_trace:    return "TRACE";
+    case http_connect:  return "CONNECT";
+  }
+}
+
+static void
+minuted_tap_access(tap_rq_data *rqd)
+{
+  const char *method = minuted_tap_method_name(rqd->method);
+  const char *query = rqd->o_query ? Tcl_GetString(rqd->o_query) : "";
+
+  char name[INET6_ADDRSTRLEN];
+  struct sockaddr_in addr;
+  socklen_t addrlen = sizeof(addr);
+  getsockname(rqd->sock, (struct sockaddr*)&addr, &addrlen);
+
+  acclog("%s %s %s %s%s%s %d",
+    inet_ntop(addr.sin_family, &addr.sin_addr, name, sizeof(name)),
+    rqd->o_host ? Tcl_GetString(rqd->o_host) : "unknown", method,
+    rqd->o_path ? Tcl_GetString(rqd->o_path) : "<none>",
+    *query?"?":"", query,
+    rqd->code);
+}
+
 static void
 minuted_tap_error  (minute_http_rq   *rq,
                     unsigned          status,
                     void             *rsvoid)
 {
-  error("Request parsing failed: %d", status);
+  error("Read failure: %d %s", status,
+    minute_http_response_text(status));
 }
 
 Tcl_Interp*
@@ -657,7 +700,7 @@ minuted_tap_handle (int           sock,
     minuted_tap_response,
     minuted_tap_error
   };
-  tap_rq_data rqd = {tr, listenId};
+  tap_rq_data rqd = {tr, listenId, sock};
 
   minute_httpd_state state;
 
@@ -678,35 +721,17 @@ minuted_tap_handle (int           sock,
 
 
   do {
-    r = minute_httpd_handle(&app,&state,&rqd);
-
-    //TODO move this to proper logging.
-    const char *method;
-    switch(r) {
-      case httpd_client_ok_open:
-      case httpd_client_ok_close: {
-        const char *query = rqd.o_query ? Tcl_GetString(rqd.o_query) : "";
-        switch(rqd.method) {
-          default:
-          case http_unknown_method: method = "???"; break;
-          case http_get:      method = "GET";     break;
-          case http_post:     method = "POST";    break;
-          case http_put:      method = "PUT";     break;
-          case http_delete:   method = "DELETE";  break;
-          case http_head:     method = "HEAD";    break;
-          case http_options:  method = "OPTIONS"; break;
-          case http_trace:    method = "TRACE";   break;
-          case http_connect:  method = "CONNECT"; break;
-        }
-        acclog("%s %s %s%s%s %d",
-          rqd.o_host ? Tcl_GetString(rqd.o_host) : "unknown", method,
-          rqd.o_path ? Tcl_GetString(rqd.o_path) : "",
-          *query?"?":"", query,
-          rqd.code);
-      }
-      break;
+    if(0> (r = minute_httpd_handle(&app,&state,&rqd))) {
+      rqd.code = -r;
+      r = httpd_client_ok_close;
     }
 
+    switch(r) {
+      case httpd_client_ok_open:
+      case httpd_client_ok_close:
+        minuted_tap_access(&rqd);
+        break;
+    }
     minuted_tap_reset (&rqd);
   } while(r == httpd_client_ok_open);
 
