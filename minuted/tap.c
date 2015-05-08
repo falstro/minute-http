@@ -685,7 +685,7 @@ minuted_tap_handle (int           sock,
     switch(r) {
       case httpd_client_ok_open:
       case httpd_client_ok_close: {
-        const char *query = Tcl_GetString(rqd.o_query);
+        const char *query = rqd.o_query ? Tcl_GetString(rqd.o_query) : "";
         switch(rqd.method) {
           default:
           case http_unknown_method: method = "???"; break;
@@ -699,8 +699,8 @@ minuted_tap_handle (int           sock,
           case http_connect:  method = "CONNECT"; break;
         }
         acclog("%s %s %s%s%s %d",
-          Tcl_GetString(rqd.o_host), method,
-          Tcl_GetString(rqd.o_path),
+          rqd.o_host ? Tcl_GetString(rqd.o_host) : "unknown", method,
+          rqd.o_path ? Tcl_GetString(rqd.o_path) : "",
           *query?"?":"", query,
           rqd.code);
       }
